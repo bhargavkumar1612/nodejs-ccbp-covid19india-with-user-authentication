@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const app = express();
+
 app.use(express.json());
 const dbPath = path.join(__dirname, "covid19IndiaPortal.db");
 
@@ -26,8 +27,10 @@ const initializeDBAndStartServer = async () => {
     process.exit(0);
   }
 };
+
+// initializing server and database
 initializeDBAndStartServer();
-module.exports = app;
+
 // login user api
 
 app.post("/login/", async (request, response) => {
@@ -37,35 +40,35 @@ app.post("/login/", async (request, response) => {
   );
   if (dbUser === undefined) {
     response.status(400);
-    response.send("Invalid user");
+    response.send("Invalid User");
   } else {
     const isPasswordMatched = await bcrypt.compare(password, dbUser.password);
     if (isPasswordMatched) {
       const payload = { username };
-      const jwToken = jwt.sign(payload, "MY_SECRET_KEY");
-      response.send({ jwToken });
+      const jwtToken = jwt.sign(payload, "MY_SECRET_KEY");
+      response.send({ jwtToken });
     } else {
       response.status(400);
-      response.send("Invalid password");
+      response.send("Invalid Password");
     }
   }
 });
 
-// authenticate jwToken
+// authenticate jwtToken
 function authenticateToken(request, response, next) {
-  let jwToken;
+  let jwtToken;
   const authHeaders = request.headers.authorization;
   if (authHeaders !== undefined) {
-    jwToken = authHeaders.split(" ")[1];
+    jwtToken = authHeaders.split(" ")[1];
   }
   if (authHeaders === undefined) {
-    response.status(400);
-    response.send("Invalid token");
+    response.status(401);
+    response.send("Invalid JWT Token");
   } else {
-    jwt.verify(jwToken, "MY_SECRET_KEY", async (error, payload) => {
+    jwt.verify(jwtToken, "MY_SECRET_KEY", async (error, payload) => {
       if (error) {
-        response.status(400);
-        response.send("Invalid token");
+        response.status(401);
+        response.send("Invalid JWT Token");
       } else {
         next();
       }
@@ -259,3 +262,7 @@ app.get(
     response.send(districtStateResponse);
   }
 );
+
+// exporting app
+
+module.exports = app;
